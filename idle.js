@@ -11,6 +11,7 @@ var idle = (function() {
         moneyPerSecond: 0,
         properties: "Properties",
         closedData: null,
+        globalPropNames: [],
     };
 
     //Checking to see if saved game. Calculating the idle time away from game, and adding it to total money
@@ -33,20 +34,20 @@ var idle = (function() {
         //Inserting HTML into body
         document.body.innerHTML = `
             <div class="title">
-                <h1 id="gameTitle">${gameData.name}</h1>
+                <img src="assets/cashBag.gif" class="rounded float-end" alt="Hand holding a bag of money">
+                <h1 class="text-center" id="gameTitle">${gameData.name}</h1>
                 <div class="gamer_info">
                     <p id="total_money"> Total Money: ${gameData.money} ${gameData.currencySymbol}</p>
                     <div class="btn-group" role="group">
-                        <button class="btn_green" type="button" onclick="idle.save()">Save</button>
-                        <button class="btn_red" type="button" onclick="idle.deleteSave()">Delete savegame</button>
+                        <button class="btn btn-success" type="button" onclick="idle.save()">Save</button>
+                        <button class="btn btn-danger" type="button" onclick="idle.deleteSave()">Delete savegame</button>
                     </div>
                 </div>
             </div>
             <section class= "property_section">
-                <div class="row">
-                    <div id="property_conntainer">
-                        <h2 id="properties">${gameData.properties}</h2>
-                    </div>
+                <h2 id="properties">${gameData.properties}</h2>
+                <div class="container">
+                    <div class="row g-2" id="property_conntainer"></div>
                 </div>
             </section>
             <div class="footer">
@@ -69,12 +70,6 @@ var idle = (function() {
         let saveGameLoop = window.setInterval(function() {
             localStorage.setItem(`idlejsSave`, JSON.stringify(gameData));
         }, 15000);
-
-        //Store date and save on close 
-        window.addEventListener("unload", function (e) {
-            gameData.closedData = Date.now();
-            localStorage.setItem(`idlejsSave`, JSON.stringify(gameData));
-        });
     }
 
     //Constructor for creating properties
@@ -91,6 +86,7 @@ var idle = (function() {
             this.purchased = false;
             this.varName = propertyName.charAt(0).toLowerCase() + propertyName.substring(1).split(' ').join('');
             this.tickerVar;
+            gameData.globalPropNames.push({propertyName: this.name, variableName: this.varName});
             
             //Checking if there is saved data and assigning
             let savegamePropertyLevel = JSON.parse(localStorage.getItem(`${this.name}level`));
@@ -112,22 +108,24 @@ var idle = (function() {
             
             //Interting each property into the property container
             document.getElementById("property_conntainer").innerHTML += `
-                <div class="prop_box">
+            <div class="col-6">
+                <div class="prop_box p-3 border">
                     <div>
                         <h3 id="${this.varName}text">${this.name} (current level: ${this.level})</h3>
                         <p class="accumulated_property" id="${this.varName}accumulated">Accumulated Money: ${this.accumulatedMoney}${gameData.currencySymbol}</p>
                         <div class="btn-group" role="group">
-                            <button class="btn_green" type="button" id="${this.varName}collectButton" onclick="${this.varName}.collectMoney()">Collect Money</button>
+                            <button class="btn btn-outline-warning" type="button" id="${this.varName}collectButton" onclick="${this.varName}.collectMoney()">Collect Money</button>
                         </div>
                         <p class="mps_property" id="${this.varName}mps">${this.moneyPerSecond}${gameData.currencySymbol} per second</p>
                     </div>
                     <div>
                         <div class="btn-group" role="group">
-                            <button class="btn_green" type="button" id="${this.varName}buyUpgrade" onclick="${this.varName}.buy()">Buy ${this.cost}${gameData.currencySymbol}</button>
-                            <button class="btn_red" type="button" id="${this.varName}hireManager" onclick="${this.varName}.hireManager()">Hire Manager ${this.managerCost}${gameData.currencySymbol}</button>
+                            <button class="btn btn-light" type="button" id="${this.varName}buyUpgrade" onclick="${this.varName}.buy()">Buy ${this.cost}${gameData.currencySymbol}</button>
+                            <button class="btn btn-light" type="button" id="${this.varName}hireManager" onclick="${this.varName}.hireManager()">Hire Manager ${this.managerCost}${gameData.currencySymbol}</button>
                         </div>
                     </div>
                 </div>
+            </div>
             `;
 
             //checking saved data and setting up property loops
@@ -180,13 +178,21 @@ var idle = (function() {
                 document.getElementById(`${this.varName}buyUpgrade`).setAttribute( "onClick", `javascript: ${this.varName}.upgrade();` );
                 document.getElementById(`${this.varName}text`).innerHTML = `${this.name} (current level: ${this.level})`;
                 document.getElementById(`${this.varName}mps`).innerHTML = `${this.moneyPerSecond}${gameData.currencySymbol} per second`;
-            };
+            } else {
+                alert("Not enough Money!");
+            }
         }
-        //property loop (with no manager)
+        //property loop (with no manager) while also saving every second
         ticker = function() {
             if (this.purchased) {
                 this.accumulatedMoney += this.moneyPerSecond;
                 document.getElementById(`${this.varName}accumulated`).innerHTML = `Accumulated Money: ${this.accumulatedMoney}${gameData.currencySymbol}`;
+
+                localStorage.setItem(`${this.name}level`, JSON.stringify(this.level));
+                localStorage.setItem(`${this.name}moneyPerSecond`, JSON.stringify(this.moneyPerSecond));
+                localStorage.setItem(`${this.name}upgradeCost`, JSON.stringify(this.upgradeCost));
+                localStorage.setItem(`${this.name}accumulatedMoney`, JSON.stringify(this.accumulatedMoney));
+                localStorage.setItem(`${this.name}purchased`, JSON.stringify(this.purchased));
             };
         }
         //function to upgrate property, for both with manager, and without manager
@@ -196,7 +202,7 @@ var idle = (function() {
                 this.level++;
                 this.upgradeCost = this.upgradeCost * 2;
                 gameData.moneyPerSecond -= this.moneyPerSecond;
-                this.moneyPerSecond++;
+                this.moneyPerSecond += (Math.ceil(this.moneyPerSecond * 0.1))
                 gameData.moneyPerSecond += this.moneyPerSecond;
 
                 localStorage.setItem(`${this.name}level`, JSON.stringify(this.level));
@@ -213,7 +219,7 @@ var idle = (function() {
                 gameData.money -= this.upgradeCost;
                 this.level++;
                 this.upgradeCost = this.upgradeCost * 2;
-                this.moneyPerSecond++;
+                this.moneyPerSecond += (Math.ceil(this.moneyPerSecond * 0.1))
 
                 localStorage.setItem(`${this.name}level`, JSON.stringify(this.level));
                 localStorage.setItem(`${this.name}moneyPerSecond`, JSON.stringify(this.moneyPerSecond));
@@ -251,7 +257,9 @@ var idle = (function() {
                 document.getElementById(`${this.varName}hireManager`).innerHTML = `Manager Hired`;
                 let collectButton = document.getElementById(`${this.varName}collectButton`);
                 collectButton.remove();
-            };
+            } else {
+                alert("Not enough Money!");
+            }
         }
         //function to collect the accumulated money
         collectMoney = function() {
@@ -266,20 +274,14 @@ var idle = (function() {
     //function to delete the saved game
     library.deleteSave = function() {
         localStorage.clear();
-        gameData = {
-            name: "Capitalism FTW",
-            money: 10,
-            currencySymbol: "$",
-            moneyPerSecond: 0,
-            properties: "Properties",
-            closedData: Date.now(),
-        }
         location.reload();
     }
 
-    //function to save the game
+    //function to save the game data
     library.save = function() {
+        gameData.closedData = Date.now();
         localStorage.setItem(`idlejsSave`, JSON.stringify(gameData));
+        alert("You have saved your game")
     }
 
     // Expose the public methods inside the library
