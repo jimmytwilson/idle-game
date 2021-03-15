@@ -74,7 +74,7 @@ var idle = (function() {
 
     //Constructor for creating properties
     library.propertyConstructor = class {
-        constructor(propertyName, level, moneyPerSecond, cost, managerCost) {
+        constructor(propertyName, level, moneyPerSecond, cost, managerCost, imgLink) {
             this.name = propertyName;
             this.level = level;
             this.moneyPerSecond = moneyPerSecond;
@@ -110,6 +110,7 @@ var idle = (function() {
             document.getElementById("property_conntainer").innerHTML += `
             <div class="col-6">
                 <div class="prop_box p-3 border">
+                    <img src="${imgLink}" class="rounded float-end" alt="icon for ${this.name}">
                     <div>
                         <h3 id="${this.varName}text">${this.name} (current level: ${this.level})</h3>
                         <p class="accumulated_property" id="${this.varName}accumulated">Accumulated Money: ${this.accumulatedMoney}${gameData.currencySymbol}</p>
