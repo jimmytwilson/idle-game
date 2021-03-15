@@ -14,6 +14,9 @@ This is a browser game made with the big 3 (With a little help from Bootstrap)
 - HTML
 - CSS
 
+The reasons for choosing this stack is mainly because of the the simple integration onto browser. I am also very familiar and comfortable with JavaScript. 
+Due to time constraints, it is front-end based. I would have liked to incorporate a full stack with a back end and database. This is so the user could input their own data while also saving data to a database. It would be great for idleing.
+
 ### Setup
 
 Setup is relatively simple. All you need to do is:
